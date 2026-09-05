@@ -1,0 +1,656 @@
+/* =========================================================
+   TRACKJOBS - ACCOUNT SETTINGS
+========================================================= */
+
+.account-settings-page {
+  padding-bottom: 80px;
+}
+
+.account-settings-head {
+  margin-bottom: 28px;
+}
+
+.account-settings-layout {
+  display: grid;
+  grid-template-columns: 245px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.settings-sidebar,
+.settings-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 12px 32px rgba(28, 27, 65, 0.045);
+}
+
+.settings-sidebar {
+  padding: 12px;
+  position: sticky;
+  top: 90px;
+}
+
+.settings-user-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: #fafaff;
+  border-radius: 13px;
+}
+
+.settings-user-avatar {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(135deg, #7568f5, #5545df);
+  font-weight: 800;
+}
+
+.settings-user-card div:last-child {
+  min-width: 0;
+}
+
+.settings-user-card strong,
+.settings-user-card span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-user-card strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.settings-user-card span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.settings-nav {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  margin: 2px 0;
+  color: #626675;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-nav:hover {
+  color: var(--primary);
+  background: #f6f4ff;
+}
+
+.settings-nav.active {
+  color: var(--primary);
+  background: #f0eeff;
+}
+
+.settings-nav.danger {
+  color: #c54b4b;
+}
+
+.settings-nav.danger:hover,
+.settings-nav.danger.active {
+  color: #b93636;
+  background: #fff2f2;
+}
+
+.settings-content {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.settings-card {
+  padding: 26px;
+}
+
+.settings-card-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.settings-card-heading > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.settings-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 40px;
+  color: var(--primary);
+  background: #f1efff;
+  border-radius: 11px;
+}
+
+.settings-icon.danger {
+  color: #c54b4b;
+  background: #fff0f0;
+}
+
+.settings-card h2 {
+  margin: 1px 0 5px;
+  color: var(--ink);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 21px;
+}
+
+.settings-card-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.settings-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.settings-info-grid > div {
+  padding: 15px;
+  background: #fafafd;
+  border: 1px solid #ececf3;
+  border-radius: 12px;
+}
+
+.settings-info-grid span,
+.settings-info-grid strong,
+.settings-info-grid small {
+  display: block;
+}
+
+.settings-info-grid span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.settings-info-grid strong {
+  margin-top: 6px;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.settings-info-grid strong.capitalize {
+  text-transform: capitalize;
+}
+
+.settings-info-grid small {
+  margin-top: 5px;
+  color: #9699a5;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.settings-inline-actions,
+.settings-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.settings-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.settings-alert.success {
+  color: #16734e;
+  background: #effaf4;
+  border: 1px solid #cceedd;
+}
+
+.settings-alert.error {
+  color: #b43e3e;
+  background: #fff3f3;
+  border: 1px solid #f0d1d1;
+}
+
+.settings-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.settings-form > label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #353844;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.settings-form > label:first-child {
+  grid-column: 1 / -1;
+}
+
+.settings-form input,
+.delete-account-box input {
+  width: 100%;
+  height: 48px;
+  box-sizing: border-box;
+  padding: 0 13px;
+  color: var(--ink);
+  background: #fbfbfd;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  outline: none;
+  font-size: 12px;
+}
+
+.settings-form input:focus,
+.delete-account-box input:focus {
+  background: #fff;
+  border-color: #aaa2ff;
+  box-shadow: 0 0 0 3px rgba(91, 76, 240, .07);
+}
+
+.settings-password-field {
+  position: relative;
+}
+
+.settings-password-field input {
+  padding-right: 48px;
+}
+
+.settings-password-field button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: #8a8d99;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.settings-password-field button:hover {
+  color: var(--primary);
+  background: #f4f2ff;
+}
+
+.settings-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-bottom: 18px;
+  padding: 12px 13px;
+  color: #625b91;
+  background: #f7f5ff;
+  border: 1px solid #e6e2ff;
+  border-radius: 10px;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.settings-action-row,
+.danger-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 15px;
+  background: #fafafd;
+  border: 1px solid #ececf3;
+  border-radius: 12px;
+}
+
+.settings-action-row strong,
+.settings-action-row span,
+.danger-action strong,
+.danger-action span {
+  display: block;
+}
+
+.settings-action-row strong,
+.danger-action strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.settings-action-row span,
+.danger-action span {
+  max-width: 620px;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.settings-toggle-list {
+  display: grid;
+  gap: 0;
+}
+
+.settings-toggle-row {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid #eeeef3;
+}
+
+.settings-toggle-row:last-child {
+  border-bottom: 0;
+}
+
+.toggle-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  color: var(--primary);
+  background: #f4f2ff;
+  border-radius: 10px;
+}
+
+.settings-toggle-row strong,
+.settings-toggle-row span:not(.toggle-icon):not(.toggle) {
+  display: block;
+}
+
+.settings-toggle-row strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.settings-toggle-row div > span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.toggle {
+  width: 42px;
+  height: 24px;
+  padding: 3px;
+  background: #dfe0e7;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .2s ease;
+}
+
+.toggle span {
+  width: 18px;
+  height: 18px;
+  display: block;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0,0,0,.12);
+  transition: transform .2s ease;
+}
+
+.toggle.on {
+  background: var(--primary);
+}
+
+.toggle.on span {
+  transform: translateX(18px);
+}
+
+.settings-privacy-choice {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.privacy-choice {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 12px;
+  padding: 15px;
+  color: #737684;
+  background: #fff;
+  border: 1px solid #e7e7ee;
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.privacy-choice:hover {
+  border-color: #cbc6ff;
+}
+
+.privacy-choice.active {
+  color: var(--primary);
+  background: #f8f7ff;
+  border-color: #bdb7ff;
+}
+
+.privacy-choice strong,
+.privacy-choice span {
+  display: block;
+}
+
+.privacy-choice strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.privacy-choice div span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.choice-dot {
+  width: 13px;
+  height: 13px;
+  border: 2px solid #c9cad2;
+  border-radius: 50%;
+}
+
+.privacy-choice.active .choice-dot {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 3px #fff;
+  background: var(--primary);
+}
+
+.settings-data-box {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 17px;
+  background: #fafafd;
+  border: 1px solid #ececf3;
+  border-radius: 12px;
+}
+
+.settings-data-box > svg {
+  flex: 0 0 auto;
+  color: var(--primary);
+}
+
+.settings-data-box div {
+  flex: 1;
+}
+
+.settings-data-box strong,
+.settings-data-box span {
+  display: block;
+}
+
+.settings-data-box strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.settings-data-box span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.danger-zone {
+  border-color: #f0d9d9;
+}
+
+.danger-button {
+  color: #c54b4b !important;
+  border-color: #efcaca !important;
+}
+
+.danger-button:hover {
+  background: #fff4f4 !important;
+  border-color: #e6aaaa !important;
+}
+
+.delete-account-box {
+  margin-top: 16px;
+  padding: 18px;
+  background: #fff8f8;
+  border: 1px solid #f0d7d7;
+  border-radius: 13px;
+}
+
+.delete-account-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #c43f3f;
+}
+
+.delete-account-heading div {
+  flex: 1;
+}
+
+.delete-account-heading strong,
+.delete-account-heading span {
+  display: block;
+}
+
+.delete-account-heading strong {
+  color: #a92f2f;
+  font-size: 13px;
+}
+
+.delete-account-heading span {
+  margin-top: 4px;
+  color: #8e6060;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.delete-account-box label {
+  display: block;
+  margin-top: 14px;
+  color: #6e5050;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.delete-account-box label strong {
+  color: #a92f2f;
+}
+
+.delete-account-box input {
+  margin-top: 7px;
+  background: #fff;
+}
+
+.danger-solid {
+  margin-top: 14px;
+  padding: 11px 15px;
+  color: #fff;
+  background: #c83e3e;
+  border: 1px solid #c83e3e;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.danger-solid:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 850px) {
+  .account-settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-sidebar {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+  }
+
+  .settings-user-card {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .settings-card {
+    padding: 19px;
+  }
+
+  .settings-info-grid,
+  .settings-form {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-form > label:first-child {
+    grid-column: auto;
+  }
+
+  .settings-action-row,
+  .danger-action,
+  .settings-data-box {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .settings-sidebar {
+    grid-template-columns: 1fr;
+  }
+}
