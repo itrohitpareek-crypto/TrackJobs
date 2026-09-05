@@ -355,6 +355,7 @@ const PORT =
 
 server.listen(
   PORT,
+   "0.0.0.0",
   () => {
     console.log(
       `API running on ${PORT}`
