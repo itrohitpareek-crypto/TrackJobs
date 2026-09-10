@@ -1,8 +1,11 @@
+import { useEffect } from "react";
+
 import {
   BrowserRouter,
   Routes,
   Route,
   Navigate,
+  useLocation,
 } from "react-router-dom";
 
 import {
@@ -96,6 +99,21 @@ function Guard({
   return children;
 }
 
+
+/* =========================================================
+   ROUTE SCROLL RESTORATION
+   Every route should open at the top instead of keeping the
+   previous page\'s scroll position (especially the footer).
+========================================================= */
+function ScrollToTop() {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname, location.search]);
+
+  return null;
+}
 
 /* =========================================================
    APPLICATION ROUTES

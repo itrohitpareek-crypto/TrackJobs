@@ -668,6 +668,63 @@ export default function Navbar() {
 
       </div>
 
+
+      {/* ================= MOBILE NAVIGATION ================= */}
+      <button
+        type="button"
+        className="mobile-nav-toggle"
+        aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen((open) => !open)}
+      >
+        {menuOpen ? "×" : "☰"}
+      </button>
+
+      {menuOpen && (
+        <div className="mobile-nav-menu">
+          <form className="mobile-nav-search" onSubmit={handleSearch}>
+            <Search size={17} />
+            <input
+              type="text"
+              placeholder="Search jobs, skills, companies"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </form>
+
+          <Link to="/" onClick={() => setMenuOpen(false)}><Home size={18} /><span>Home</span></Link>
+          <Link to="/jobs" onClick={() => setMenuOpen(false)}><BriefcaseBusiness size={18} /><span>Jobs</span></Link>
+
+          {user?.role === "candidate" && (
+            <Link to="/applications" onClick={() => setMenuOpen(false)}><FileText size={18} /><span>Applications</span></Link>
+          )}
+
+          {(user?.role === "recruiter" || user?.role === "admin") && (
+            <Link to="/recruiter" onClick={() => setMenuOpen(false)}><LayoutDashboard size={18} /><span>Recruiter Hub</span></Link>
+          )}
+
+          {user?.role === "admin" && (
+            <Link to="/admin" onClick={() => setMenuOpen(false)}><ShieldCheck size={18} /><span>Admin</span></Link>
+          )}
+
+          {user && (
+            <>
+              <Link to="/messages" onClick={() => setMenuOpen(false)}><MessageCircle size={18} /><span>Messages</span></Link>
+              <Link to="/notifications" onClick={() => setMenuOpen(false)}><Bell size={18} /><span>Notifications</span></Link>
+              <Link to="/profile" onClick={() => setMenuOpen(false)}><UserCircle size={18} /><span>Profile</span></Link>
+              <Link to="/settings" onClick={() => setMenuOpen(false)}><Settings size={18} /><span>Account settings</span></Link>
+              <button type="button" onClick={handleLogout}><LogOut size={18} /><span>Sign out</span></button>
+            </>
+          )}
+
+          {!user && (
+            <>
+              <Link to="/login" onClick={() => setMenuOpen(false)}><UserCircle size={18} /><span>Sign in</span></Link>
+              <Link to="/register" onClick={() => setMenuOpen(false)}><UserCircle size={18} /><span>Get started</span></Link>
+            </>
+          )}
+        </div>
+      )}
     </header>
   );
 }
