@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
 
 import User from "../models/User.js";
 
@@ -23,8 +24,10 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
+
   filename: (req, file, cb) => {
     const extension = path.extname(file.originalname);
+
     const baseName = path
       .basename(file.originalname, extension)
       .replace(/[^a-zA-Z0-9-_]/g, "-");
@@ -72,6 +75,69 @@ export const upload = multer({
   },
 });
 
+// ==========================================
+// CLOUDINARY CONFIG
+// ==========================================
+
+const configureCloudinary = () => {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+  if (!cloudName || !apiKey || !apiSecret) {
+    throw new Error(
+      "Cloudinary environment variables are not configured"
+    );
+  }
+
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+  });
+};
+
+// ==========================================
+// LOCAL TEMP FILE CLEANUP
+// ==========================================
+
+const removeLocalFile = async (filePath) => {
+  if (!filePath) return;
+
+  try {
+    await fs.promises.unlink(filePath);
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      console.error(
+        "Temporary file cleanup error:",
+        error.message
+      );
+    }
+  }
+};
+
+// ==========================================
+// DELETE OLD CLOUDINARY AVATAR
+// ==========================================
+
+const deleteCloudinaryImage = async (publicId) => {
+  if (!publicId) return;
+
+  try {
+    configureCloudinary();
+
+    await cloudinary.uploader.destroy(publicId, {
+      resource_type: "image",
+      invalidate: true,
+    });
+  } catch (error) {
+    console.error(
+      "Cloudinary old avatar delete error:",
+      error.message
+    );
+  }
+};
+
 const cleanString = (
   value,
   maxLength = 1000
@@ -115,7 +181,6 @@ const validateUrl = (value) => {
   }
 };
 
-
 // ==========================================
 // GET PROFILE
 // ==========================================
@@ -141,9 +206,7 @@ export const getProfile = async (
       success: true,
       profile: user,
     });
-
   } catch (error) {
-
     console.error(
       "Get Profile Error:",
       error
@@ -156,7 +219,6 @@ export const getProfile = async (
   }
 };
 
-
 // ==========================================
 // UPDATE PROFILE
 // ==========================================
@@ -165,8 +227,9 @@ export const updateProfile = async (
   req,
   res
 ) => {
-  try {
+  let uploadedCloudinaryAvatar = null;
 
+  try {
     const allowedFields = [
       "name",
       "company",
@@ -206,7 +269,6 @@ export const updateProfile = async (
       }
     }
 
-
     // ======================================
     // MULTIPART ARRAY PARSING
     // ======================================
@@ -218,25 +280,20 @@ export const updateProfile = async (
         "experience",
       ]
     ) {
-
       if (
         typeof updates[field] ===
         "string"
       ) {
         try {
-
           updates[field] =
             JSON.parse(
               updates[field]
             );
-
         } catch {
-
           updates[field] = [];
         }
       }
     }
-
 
     // ======================================
     // BASIC PROFILE FIELDS
@@ -246,7 +303,6 @@ export const updateProfile = async (
       updates.name !==
       undefined
     ) {
-
       updates.name =
         cleanString(
           updates.name,
@@ -265,7 +321,6 @@ export const updateProfile = async (
       }
     }
 
-
     if (
       updates.company !==
       undefined
@@ -276,7 +331,6 @@ export const updateProfile = async (
           200
         );
     }
-
 
     if (
       updates.industry !==
@@ -289,7 +343,6 @@ export const updateProfile = async (
         );
     }
 
-
     // ======================================
     // COMPANY SIZE
     // ======================================
@@ -298,7 +351,6 @@ export const updateProfile = async (
       updates.companySize !==
       undefined
     ) {
-
       const allowedCompanySizes = [
         "",
         "1-10",
@@ -330,7 +382,6 @@ export const updateProfile = async (
       }
     }
 
-
     // ======================================
     // COMPANY WEBSITE
     // ======================================
@@ -339,7 +390,6 @@ export const updateProfile = async (
       updates.companyWebsite !==
       undefined
     ) {
-
       updates.companyWebsite =
         cleanString(
           updates.companyWebsite,
@@ -359,7 +409,6 @@ export const updateProfile = async (
       }
     }
 
-
     if (
       updates.phone !==
       undefined
@@ -370,7 +419,6 @@ export const updateProfile = async (
           20
         );
     }
-
 
     if (
       updates.location !==
@@ -383,7 +431,6 @@ export const updateProfile = async (
         );
     }
 
-
     if (
       updates.headline !==
       undefined
@@ -395,7 +442,6 @@ export const updateProfile = async (
         );
     }
 
-
     if (
       updates.bio !==
       undefined
@@ -406,7 +452,6 @@ export const updateProfile = async (
           1500
         );
     }
-
 
     // ======================================
     // SKILLS
@@ -422,7 +467,6 @@ export const updateProfile = async (
         );
     }
 
-
     // ======================================
     // EDUCATION
     // ======================================
@@ -431,7 +475,6 @@ export const updateProfile = async (
       updates.education !==
       undefined
     ) {
-
       if (
         !Array.isArray(
           updates.education
@@ -486,7 +529,6 @@ export const updateProfile = async (
           }));
     }
 
-
     // ======================================
     // EXPERIENCE
     // ======================================
@@ -495,7 +537,6 @@ export const updateProfile = async (
       updates.experience !==
       undefined
     ) {
-
       if (
         !Array.isArray(
           updates.experience
@@ -553,7 +594,6 @@ export const updateProfile = async (
           }));
     }
 
-
     // ======================================
     // URL FIELDS
     // ======================================
@@ -567,12 +607,10 @@ export const updateProfile = async (
     for (
       const field of urlFields
     ) {
-
       if (
         updates[field] !==
         undefined
       ) {
-
         updates[field] =
           cleanString(
             updates[field],
@@ -593,7 +631,6 @@ export const updateProfile = async (
       }
     }
 
-
     // ======================================
     // SALARY
     // ======================================
@@ -608,7 +645,6 @@ export const updateProfile = async (
         ) || 0;
     }
 
-
     if (
       updates.expectedSalaryMax !==
       undefined
@@ -618,7 +654,6 @@ export const updateProfile = async (
           updates.expectedSalaryMax
         ) || 0;
     }
-
 
     if (
       updates.expectedSalaryMin >
@@ -635,18 +670,70 @@ export const updateProfile = async (
       });
     }
 
-
     // ======================================
-    // UPLOADED FILES
+    // GET EXISTING USER
     // ======================================
 
-    if (
-      req.files?.avatar?.[0]
-    ) {
-      updates.avatar =
-        `/uploads/${req.files.avatar[0].filename}`;
+    const existingUser =
+      await User.findById(
+        req.user._id
+      );
+
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
+    // ======================================
+    // AVATAR -> CLOUDINARY
+    // ======================================
+
+    const avatarFile =
+      req.files?.avatar?.[0];
+
+    if (avatarFile) {
+      try {
+        configureCloudinary();
+
+        uploadedCloudinaryAvatar =
+          await cloudinary.uploader.upload(
+            avatarFile.path,
+            {
+              folder:
+                "trackjobs/avatars",
+
+              resource_type:
+                "image",
+
+              transformation: [
+                {
+                  width: 500,
+                  height: 500,
+                  crop: "limit",
+                  quality: "auto",
+                  fetch_format: "auto",
+                },
+              ],
+            }
+          );
+
+        updates.avatar =
+          uploadedCloudinaryAvatar.secure_url;
+
+        updates.avatarPublicId =
+          uploadedCloudinaryAvatar.public_id;
+      } finally {
+        await removeLocalFile(
+          avatarFile.path
+        );
+      }
+    }
+
+    // ======================================
+    // RESUME
+    // ======================================
 
     if (
       req.files?.resume?.[0]
@@ -654,7 +741,6 @@ export const updateProfile = async (
       updates.resumeUrl =
         `/uploads/${req.files.resume[0].filename}`;
     }
-
 
     // ======================================
     // SAVE PROFILE
@@ -672,14 +758,35 @@ export const updateProfile = async (
         }
       ).select("-password");
 
-
     if (!user) {
+      if (
+        uploadedCloudinaryAvatar?.public_id
+      ) {
+        await deleteCloudinaryImage(
+          uploadedCloudinaryAvatar.public_id
+        );
+      }
+
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
 
+    // ======================================
+    // DELETE OLD CLOUDINARY AVATAR
+    // ======================================
+
+    if (
+      avatarFile &&
+      existingUser.avatarPublicId &&
+      existingUser.avatarPublicId !==
+        updates.avatarPublicId
+    ) {
+      await deleteCloudinaryImage(
+        existingUser.avatarPublicId
+      );
+    }
 
     return res.status(200).json({
       success: true,
@@ -687,13 +794,30 @@ export const updateProfile = async (
         "Profile updated successfully",
       profile: user,
     });
-
   } catch (error) {
-
     console.error(
       "Update Profile Error:",
       error
     );
+
+    // Delete newly uploaded Cloudinary
+    // image if database update fails.
+    if (
+      uploadedCloudinaryAvatar?.public_id
+    ) {
+      await deleteCloudinaryImage(
+        uploadedCloudinaryAvatar.public_id
+      );
+    }
+
+    // Delete temporary avatar file.
+    if (
+      req.files?.avatar?.[0]?.path
+    ) {
+      await removeLocalFile(
+        req.files.avatar[0].path
+      );
+    }
 
     return res.status(500).json({
       success: false,
