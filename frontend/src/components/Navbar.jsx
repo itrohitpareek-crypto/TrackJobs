@@ -117,7 +117,7 @@ export default function Navbar() {
     setSearchTerm,
   ] = useState("");
 
-  const menuRef =
+  const navRef =
     useRef(null);
 
 
@@ -209,8 +209,8 @@ export default function Navbar() {
       (event) => {
 
         if (
-          menuRef.current &&
-          !menuRef.current.contains(
+          navRef.current &&
+          !navRef.current.contains(
             event.target
           )
         ) {
@@ -265,7 +265,7 @@ export default function Navbar() {
 
 
   return (
-    <header className="nav">
+    <header className="nav" ref={navRef}>
 
       <div className="nav-inner">
 
@@ -522,7 +522,6 @@ export default function Navbar() {
 
             <div
               className="nav-profile-menu"
-              ref={menuRef}
             >
 
               <button
