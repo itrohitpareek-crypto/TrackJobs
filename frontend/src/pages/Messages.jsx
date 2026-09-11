@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import {
   ArrowLeft, Check, CheckCheck, Copy, Download, Edit3, FileText,
-  Image as ImageIcon, MessageCircle, MoreVertical, Paperclip, Search,
-  Send, Smile, Trash2, UserRound, X, Reply, ChevronDown
+  MessageCircle, MoreVertical, Paperclip, Search,
+  Send, Smile, Trash2, UserRound, X, Reply
 } from "lucide-react";
 import api, { getFileUrl, SERVER_URL } from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -124,6 +124,17 @@ export default function Messages() {
   }, [user, selectedUser?._id]);
 
   useEffect(() => {
+    const handleOutside = (event) => {
+      if (!event.target.closest(".chat-menu-wrap") && !event.target.closest(".message-actions-popover") && !event.target.closest(".message-bubble")) {
+        setShowMenu(false);
+        setActiveMessageId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, []);
+
+  useEffect(() => {
     if (!selectedUser?._id) return;
     const refresh = async () => { try { const r = await api.get(`/messages/${selectedUser._id}`); setMessages(r.data?.messages || []); } catch {} };
     const id = setInterval(refresh, 10000);
@@ -212,7 +223,7 @@ export default function Messages() {
           <header className="thread-head">
             <button type="button" className="thread-back" onClick={() => setSelectedUser(null)}><ArrowLeft size={18}/></button>
             <Avatar user={selectedUser}/><div><strong>{selectedUser.name}</strong><span>{selectedUser.role === "recruiter" ? selectedUser.company || "Recruiter" : selectedUser.headline || "Candidate"}{typing ? " • typing…" : ""}</span></div>
-            <div style={{ marginLeft: "auto", position: "relative" }}><button type="button" className="chat-icon-button" onClick={() => setShowMenu(v => !v)} aria-label="Chat options"><MoreVertical size={19}/></button>{showMenu && <div className="chat-menu"><button type="button" onClick={clearChat}><Trash2 size={15}/> Clear chat</button><button type="button" onClick={() => setMessageSearch(v => v ? "" : " ")}><Search size={15}/> Search messages</button></div>}</div>
+            <div className="chat-menu-wrap"><button type="button" className={`chat-icon-button ${showMenu ? "active" : ""}`} onClick={() => setShowMenu(v => !v)} aria-label="Chat options" aria-expanded={showMenu}><MoreVertical size={19}/></button>{showMenu && <div className="chat-menu" role="menu"><button type="button" onClick={() => { setMessageSearch(" "); setShowMenu(false); }}><Search size={15}/><span>Search messages</span></button><button type="button" onClick={clearChat}><Trash2 size={15}/><span>Clear chat</span></button></div>}</div>
           </header>
           {messageSearch !== "" && <div className="message-search-bar"><Search size={15}/><input autoFocus value={messageSearch.trim()} onChange={e => setMessageSearch(e.target.value)} placeholder="Search messages..."/><button type="button" onClick={() => setMessageSearch("")}><X size={14}/></button></div>}
           <div className="thread-messages">
@@ -243,15 +254,24 @@ export default function Messages() {
               </div></div>;
             })}<div ref={bottomRef}/>
           </div>
-          {(replyTo || editing || files.length) > 0 && <div className="composer-context">{editing ? <><Edit3 size={15}/><span>Editing message</span><button type="button" onClick={() => { setEditing(null); setMessageText(""); }}><X size={14}/></button></> : replyTo ? <><Reply size={15}/><span>Replying to: {replyTo.text || "Attachment"}</span><button type="button" onClick={() => setReplyTo(null)}><X size={14}/></button></> : <><Paperclip size={15}/><span>{files.length} file{files.length > 1 ? "s" : ""} selected</span><button type="button" onClick={() => setFiles([])}><X size={14}/></button></>}</div>}
           <form className="message-composer" onSubmit={send}>
             <input ref={fileRef} type="file" hidden multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.txt" onChange={chooseFiles}/>
-            <button type="button" className="composer-icon" onClick={() => fileRef.current?.click()} title="Attach files"><Paperclip size={18}/></button>
-            <div style={{ flex: 1, position: "relative" }}><textarea value={messageText} onChange={e => { setMessageText(e.target.value); notifyTyping(Boolean(e.target.value)); }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder={editing ? "Edit your message..." : `Message ${selectedUser.name}...`} maxLength={5000} rows={1}/>{showEmoji && <div className="emoji-picker">{EMOJIS.map(e => <button type="button" key={e} onClick={() => setMessageText(t => t + e)}>{e}</button>)}</div>}</div>
-            <button type="button" className="composer-icon" onClick={() => setShowEmoji(v => !v)} title="Emoji"><Smile size={18}/></button>
-            <button type="submit" className="message-send" disabled={sending || (!messageText.trim() && !files.length)}><Send size={17}/></button>
+            <div className={`composer-input-shell ${editing ? "editing-shell" : ""}`}>
+              {(replyTo || editing || files.length > 0) && <div className="composer-inline-context">
+                {editing ? <><Edit3 size={14}/><span>Editing message</span><button type="button" onClick={() => { setEditing(null); setMessageText(""); }} aria-label="Cancel edit"><X size={14}/></button></>
+                  : replyTo ? <><Reply size={14}/><span>Replying to: {replyTo.text || "Attachment"}</span><button type="button" onClick={() => setReplyTo(null)} aria-label="Cancel reply"><X size={14}/></button></>
+                  : <><Paperclip size={14}/><span>{files.length} file{files.length > 1 ? "s" : ""} attached</span><button type="button" onClick={() => setFiles([])} aria-label="Remove attachments"><X size={14}/></button></>}
+              </div>}
+              <div className="composer-main-row">
+                <button type="button" className="composer-inner-button" onClick={() => fileRef.current?.click()} title="Attach files" aria-label="Attach files"><Paperclip size={18}/></button>
+                <textarea value={messageText} onChange={e => { setMessageText(e.target.value); notifyTyping(Boolean(e.target.value)); }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }} placeholder={editing ? "Edit your message..." : `Message ${selectedUser.name}...`} maxLength={5000} rows={1}/>
+                <button type="button" className={`composer-inner-button ${showEmoji ? "active" : ""}`} onClick={() => setShowEmoji(v => !v)} title="Emoji" aria-label="Emoji"><Smile size={18}/></button>
+              </div>
+              {files.length > 0 && <div className="composer-file-chips">{files.map((file, index) => <span className="composer-file-chip" key={`${file.name}-${index}`} title={file.name}><Paperclip size={12}/><span>{file.name}</span><button type="button" onClick={() => setFiles(prev => prev.filter((_, i) => i !== index))} aria-label={`Remove ${file.name}`}><X size={12}/></button></span>)}</div>}
+              {showEmoji && <div className="emoji-picker">{EMOJIS.map(e => <button type="button" key={e} onClick={() => setMessageText(t => t + e)}>{e}</button>)}</div>}
+            </div>
+            <button type="submit" className="message-send" disabled={sending || (!messageText.trim() && !files.length)} aria-label="Send message"><Send size={17}/></button>
           </form>
-          <div className="composer-hint">Enter to send · Shift + Enter for a new line · Files up to 10 MB</div>
         </>}
       </section>
     </section>
