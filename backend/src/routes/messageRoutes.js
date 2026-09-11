@@ -1,11 +1,16 @@
 import { Router } from "express";
 
 import {
+  upload,
   conversations,
   unreadCount,
   people,
   thread,
   sendMessage,
+  markThreadRead,
+  editMessage,
+  deleteMessage,
+  clearChat,
 } from "../controllers/messageController.js";
 
 import { auth } from "../middleware/auth.js";
@@ -39,7 +44,35 @@ router.get(
 router.post(
   "/:userId",
   auth,
+  upload.array(
+    "attachments",
+    10
+  ),
   sendMessage
+);
+
+router.patch(
+  "/:userId/read",
+  auth,
+  markThreadRead
+);
+
+router.patch(
+  "/:userId/:messageId",
+  auth,
+  editMessage
+);
+
+router.delete(
+  "/:userId/clear",
+  auth,
+  clearChat
+);
+
+router.delete(
+  "/:userId/:messageId",
+  auth,
+  deleteMessage
 );
 
 export default router;
