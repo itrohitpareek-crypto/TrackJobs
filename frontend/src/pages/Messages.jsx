@@ -53,6 +53,7 @@ export default function Messages() {
   const [editing, setEditing] = useState(null);
   const [showEmoji, setShowEmoji] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [activeMessageId, setActiveMessageId] = useState(null);
   const [showNewMessage, setShowNewMessage] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -64,6 +65,7 @@ export default function Messages() {
   const socketRef = useRef(null);
   const fileRef = useRef(null);
   const typingTimer = useRef(null);
+  const messageActionRef = useRef(null);
 
   const selectedConversation = useMemo(() => conversations.find(x => String(x.user?._id) === String(selectedUser?._id)), [conversations, selectedUser]);
   const filteredConversations = conversations.filter(x => x.user?.name?.toLowerCase().includes(search.toLowerCase()));
@@ -80,7 +82,7 @@ export default function Messages() {
 
   const loadThread = async (person) => {
     if (!person?._id) return;
-    setSelectedUser(person); setThreadLoading(true); setError(""); setShowMenu(false); setMessageSearch("");
+    setSelectedUser(person); setThreadLoading(true); setError(""); setShowMenu(false); setMessageSearch(""); setActiveMessageId(null);
     try {
       const r = await api.get(`/messages/${person._id}`);
       setMessages(r.data?.messages || []);
@@ -172,6 +174,7 @@ export default function Messages() {
   };
 
   const deleteMessage = async (item) => {
+    setActiveMessageId(null);
     if (!window.confirm("Delete this message for everyone?")) return;
     try { await api.delete(`/messages/${selectedUser._id}/${item._id}`); setMessages(m => m.map(x => String(x._id) === String(item._id) ? { ...x, deleted: true, text: "", attachments: [] } : x)); }
     catch (e) { setError(e.response?.data?.message || "Unable to delete message."); }
@@ -183,9 +186,9 @@ export default function Messages() {
     catch (e) { setError(e.response?.data?.message || "Unable to clear chat."); }
   };
 
-  const copyMessage = async (text) => { if (!text) return; try { await navigator.clipboard.writeText(text); } catch {} };
-  const startEdit = item => { setEditing(item); setReplyTo(null); setMessageText(item.text || ""); setShowEmoji(false); };
-  const startReply = item => { setReplyTo(item); setEditing(null); };
+  const copyMessage = async (text) => { if (!text) return; try { await navigator.clipboard.writeText(text); } catch {} setActiveMessageId(null); };
+  const startEdit = item => { setEditing(item); setReplyTo(null); setMessageText(item.text || ""); setShowEmoji(false); setActiveMessageId(null); };
+  const startReply = item => { setReplyTo(item); setEditing(null); setActiveMessageId(null); };
 
   return <main className="container messages-page">
     <div className="messages-head">
@@ -217,13 +220,24 @@ export default function Messages() {
               const mine = getUserId(item.from) === getUserId(user);
               const prev = visibleMessages[i-1];
               const showDate = !prev || dateLabel(item.createdAt) !== dateLabel(prev.createdAt);
-              return <div key={item._id}>{showDate && <div className="chat-date-separator"><span>{dateLabel(item.createdAt)}</span></div>}<div className={`message-row ${mine ? "mine" : "theirs"}`}>
-                {!mine && <Avatar user={item.from}/>}<div className="message-bubble-wrap">
+              return <div key={item._id}>{showDate && <div className="chat-date-separator"><span>{dateLabel(item.createdAt)}</span></div>}<div className={`message-row ${mine ? "mine" : "theirs"} ${activeMessageId === item._id ? "message-active" : ""}`}>
+                {!mine && <Avatar user={item.from}/>}<div className="message-bubble-wrap" ref={activeMessageId === item._id ? messageActionRef : null}>
                   {item.replyTo && <div className="reply-preview"><Reply size={13}/><span>{item.replyTo.text || "Attachment"}</span></div>}
-                  <div className={`message-bubble ${item.deleted ? "deleted-message" : ""}`}>
-                    {item.deleted ? <em>This message was deleted</em> : <>{item.text && <div className="message-text">{item.text}</div>}{item.attachments?.length > 0 && <div className="attachments-list">{item.attachments.map((a, idx) => isImage(a) ? <button type="button" className="chat-image-attachment" key={`${a.url}-${idx}`} onClick={() => setPreviewImage(a.url)}><img src={a.url} alt={a.name}/></button> : <a className="chat-file-attachment" href={a.url} target="_blank" rel="noreferrer" download={a.name}><FileText size={24}/><span><strong>{a.name}</strong><small>{fileSize(a.size)}</small></span><Download size={16}/></a>)}</div>}</>}
+                  <div
+                    className={`message-bubble ${item.deleted ? "deleted-message" : ""}`}
+                    onClick={() => { if (!item.deleted) setActiveMessageId(prev => prev === item._id ? null : item._id); }}
+                    role={!item.deleted ? "button" : undefined}
+                    tabIndex={!item.deleted ? 0 : undefined}
+                    onKeyDown={(e) => { if (!item.deleted && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setActiveMessageId(prev => prev === item._id ? null : item._id); } }}
+                  >
+                    {item.deleted ? <em>This message was deleted</em> : <>{item.text && <div className="message-text">{item.text}</div>}{item.attachments?.length > 0 && <div className="attachments-list">{item.attachments.map((a, idx) => isImage(a) ? <button type="button" className="chat-image-attachment" key={`${a.url}-${idx}`} onClick={(e) => { e.stopPropagation(); setPreviewImage(a.url); }}><img src={a.url} alt={a.name}/></button> : <a className="chat-file-attachment" href={a.url} target="_blank" rel="noreferrer" download={a.name} onClick={(e) => e.stopPropagation()}><FileText size={24}/><span><strong>{a.name}</strong><small>{fileSize(a.size)}</small></span><Download size={16}/></a>)}</div>}</>}
                   </div>
-                  <div className="message-actions"><button type="button" onClick={() => startReply(item)} title="Reply"><Reply size={13}/></button>{item.text && <button type="button" onClick={() => copyMessage(item.text)} title="Copy"><Copy size={13}/></button>}{mine && !item.deleted && <><button type="button" onClick={() => startEdit(item)} title="Edit"><Edit3 size={13}/></button><button type="button" onClick={() => deleteMessage(item)} title="Delete"><Trash2 size={13}/></button></>}</div>
+                  {activeMessageId === item._id && !item.deleted && <div className={`message-actions-popover ${mine ? "mine-popover" : "theirs-popover"}`} onClick={(e) => e.stopPropagation()}>
+                    <button type="button" onClick={() => startReply(item)}><Reply size={15}/><span>Reply</span></button>
+                    {item.text && <button type="button" onClick={() => copyMessage(item.text)}><Copy size={15}/><span>Copy</span></button>}
+                    {mine && <button type="button" onClick={() => startEdit(item)}><Edit3 size={15}/><span>Edit</span></button>}
+                    {mine && <button type="button" className="danger-action" onClick={() => deleteMessage(item)}><Trash2 size={15}/><span>Delete</span></button>}
+                  </div>}
                   <small className="message-meta"><span>{formatTime(item.createdAt)} {item.edited && !item.deleted ? "· edited" : ""}</span>{mine && !item.deleted && <span className={`message-status ${item.read ? "read" : "sent"}`} title={item.read ? "Seen" : "Sent"}>{item.read ? <CheckCheck size={14}/> : <Check size={14}/>}</span>}</small>
                 </div>
               </div></div>;
