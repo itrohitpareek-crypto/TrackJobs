@@ -1403,3 +1403,181 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* =========================================================
+   TRACKJOBS — REAL-WORLD INTERVIEW SCHEDULER
+   Add this at the END of recruiterDashboard.css
+========================================================= */
+
+.interview-scheduler-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 24px !important;
+  background: rgba(15, 18, 30, 0.62) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.interview-scheduler-modal {
+  position: relative !important;
+  z-index: 100000 !important;
+  width: min(620px, 100%) !important;
+  max-height: min(88vh, 760px);
+  overflow-y: auto;
+  padding: 30px !important;
+  background: #fff !important;
+  border: 1px solid rgba(20, 25, 45, 0.08) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 28px 80px rgba(20, 24, 45, 0.24) !important;
+  animation: interviewModalIn 0.18s ease-out;
+}
+
+.interview-scheduler-modal h2 {
+  margin: 5px 0 8px;
+  font-size: 27px;
+  letter-spacing: -0.4px;
+}
+
+.interview-scheduler-modal > p {
+  margin: 0 0 22px;
+  color: var(--muted, #6d7280);
+  line-height: 1.55;
+  font-size: 13px;
+}
+
+.interview-scheduler-modal .form-field {
+  margin-bottom: 16px;
+}
+
+.interview-scheduler-modal .form-field label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #252938;
+}
+
+.interview-scheduler-modal input,
+.interview-scheduler-modal select,
+.interview-scheduler-modal textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #dfe3ec;
+  border-radius: 12px;
+  background: #fff;
+  color: #202332;
+  padding: 12px 13px;
+  outline: none;
+  font: inherit;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.interview-scheduler-modal input:focus,
+.interview-scheduler-modal select:focus,
+.interview-scheduler-modal textarea:focus {
+  border-color: var(--primary, #5146e5);
+  box-shadow: 0 0 0 3px rgba(81, 70, 229, .10);
+}
+
+.interview-scheduler-modal textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.interview-scheduler-modal .modal-close-button {
+  z-index: 100001;
+}
+
+.interview-scheduler-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid #edf0f5;
+}
+
+.interview-scheduler-footer button {
+  min-height: 42px;
+}
+
+.scheduled-interview {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.scheduled-interview-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 3px;
+}
+
+.scheduled-interview-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.scheduled-interview-actions .danger-button {
+  border: 1px solid #f1caca;
+}
+
+@keyframes interviewModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .interview-scheduler-overlay {
+    align-items: flex-end !important;
+    padding: 10px !important;
+  }
+
+  .interview-scheduler-modal {
+    width: 100% !important;
+    max-height: 92vh;
+    padding: 22px !important;
+    border-radius: 20px !important;
+  }
+
+  .interview-scheduler-modal h2 {
+    font-size: 23px;
+  }
+
+  .interview-scheduler-footer {
+    flex-direction: column-reverse;
+  }
+
+  .interview-scheduler-footer button {
+    width: 100%;
+  }
+
+  .scheduled-interview {
+    grid-template-columns: 1fr !important;
+  }
+
+  .scheduled-interview-actions {
+    grid-column: auto;
+    flex-direction: column;
+  }
+
+  .scheduled-interview-actions button {
+    width: 100%;
+  }
+}

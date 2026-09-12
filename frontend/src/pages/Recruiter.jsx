@@ -4,6 +4,8 @@ import {
   useState,
 } from "react";
 
+import { createPortal } from "react-dom";
+
 import {
   Plus,
   Users,
@@ -228,6 +230,9 @@ export default function Recruiter() {
     useState(null);
 
   const [showInterview, setShowInterview] =
+    useState(false);
+
+  const [savingInterview, setSavingInterview] =
     useState(false);
 
   const [interviewForm, setInterviewForm] =
@@ -822,92 +827,215 @@ export default function Recruiter() {
   };
 
   // =====================================================
-  // SCHEDULE INTERVIEW
+  // OPEN INTERVIEW SCHEDULER
   // =====================================================
 
-  const scheduleInterview =
-    async () => {
-      if (
-        !selectedApplication
-      ) {
-        return;
+  const openInterviewScheduler = () => {
+    const existingDate =
+      selectedApplication?.interview?.date;
+
+    let dateValue = "";
+
+    if (existingDate) {
+      const parsed = new Date(existingDate);
+
+      if (!Number.isNaN(parsed.getTime())) {
+        const offset =
+          parsed.getTimezoneOffset() * 60000;
+
+        dateValue = new Date(
+          parsed.getTime() - offset
+        )
+          .toISOString()
+          .slice(0, 16);
       }
+    }
 
-      if (
-        !interviewForm.date
-      ) {
-        alert(
-          "Please select interview date and time."
-        );
-        return;
-      }
+    if (!dateValue) {
+      const next = new Date();
+      next.setMinutes(next.getMinutes() + 30);
 
-      try {
-        const response =
-          await api.patch(
-            `/applications/${selectedApplication._id}/status`,
-            {
-              status:
-                "Interview Scheduled",
+      const offset =
+        next.getTimezoneOffset() * 60000;
 
-              recruiterNotes:
-                selectedApplication.recruiterNotes ||
-                "",
+      dateValue = new Date(
+        next.getTime() - offset
+      )
+        .toISOString()
+        .slice(0, 16);
+    }
 
-              interview: {
-                date:
-                  interviewForm.date,
+    setInterviewForm({
+      date: dateValue,
+      mode:
+        selectedApplication?.interview?.mode ||
+        "Video call",
+      notes:
+        selectedApplication?.interview?.notes ||
+        "",
+    });
 
-                mode:
-                  interviewForm.mode,
+    setShowInterview(true);
+  };
 
-                notes:
-                  interviewForm.notes,
-              },
-            }
-          );
+  // =====================================================
+  // SCHEDULE / RESCHEDULE INTERVIEW
+  // =====================================================
 
-        const updated =
-          response.data
-            ?.application;
+  const scheduleInterview = async () => {
+    if (!selectedApplication || savingInterview) {
+      return;
+    }
 
-        if (updated) {
-          setApps(
-            (previous) =>
-              previous.map(
-                (item) =>
-                  item._id ===
-                  updated._id
-                    ? updated
-                    : item
-              )
-          );
+    if (!interviewForm.date) {
+      alert("Please select interview date and time.");
+      return;
+    }
 
-          setSelectedApplication(
-            updated
-          );
+    const interviewDate = new Date(
+      interviewForm.date
+    );
+
+    if (
+      Number.isNaN(interviewDate.getTime()) ||
+      interviewDate.getTime() <= Date.now()
+    ) {
+      alert("Please select a future interview date and time.");
+      return;
+    }
+
+    try {
+      setSavingInterview(true);
+
+      const response = await api.patch(
+        `/applications/${selectedApplication._id}/status`,
+        {
+          status: "Interview Scheduled",
+          recruiterNotes:
+            selectedApplication.recruiterNotes || "",
+          interview: {
+            date: interviewDate.toISOString(),
+            mode:
+              interviewForm.mode?.trim() ||
+              "Video call",
+            notes:
+              interviewForm.notes?.trim() || "",
+          },
         }
+      );
 
-        setShowInterview(false);
+      const updated =
+        response.data?.application;
 
-        alert(
-          "Interview scheduled successfully."
-        );
-
-        await load();
-      } catch (error) {
-        console.error(
-          "Interview error:",
-          error
-        );
-
-        alert(
-          error.response?.data
-            ?.message ||
-            "Unable to schedule interview."
+      if (!updated) {
+        throw new Error(
+          "The server did not return the updated application."
         );
       }
-    };
+
+      setApps((previous) =>
+        previous.map((item) =>
+          item._id === updated._id
+            ? updated
+            : item
+        )
+      );
+
+      setSelectedApplication(updated);
+      setShowInterview(false);
+
+      await load();
+    } catch (error) {
+      console.error(
+        "Interview scheduling error:",
+        error
+      );
+
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Unable to schedule interview."
+      );
+    } finally {
+      setSavingInterview(false);
+    }
+  };
+
+  // =====================================================
+  // CANCEL SCHEDULED INTERVIEW
+  // =====================================================
+
+  const cancelInterview = async () => {
+    if (
+      !selectedApplication ||
+      savingInterview
+    ) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Cancel the interview scheduled for ${
+        selectedApplication.candidate?.name ||
+        "this candidate"
+      }?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setSavingInterview(true);
+
+      const response = await api.patch(
+        `/applications/${selectedApplication._id}/status`,
+        {
+          status: "Shortlisted",
+          recruiterNotes:
+            selectedApplication.recruiterNotes || "",
+          interview: {
+            date: null,
+            mode: "",
+            notes: "",
+          },
+        }
+      );
+
+      const updated =
+        response.data?.application;
+
+      if (!updated) {
+        throw new Error(
+          "The server did not return the updated application."
+        );
+      }
+
+      setApps((previous) =>
+        previous.map((item) =>
+          item._id === updated._id
+            ? updated
+            : item
+        )
+      );
+
+      setSelectedApplication(updated);
+
+      await load();
+    } catch (error) {
+      console.error(
+        "Interview cancellation error:",
+        error
+      );
+
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Unable to cancel interview."
+      );
+    } finally {
+      setSavingInterview(false);
+    }
+  };
 
   // =====================================================
   // DOWNLOAD RESUME
@@ -2216,17 +2344,19 @@ export default function Recruiter() {
                 <button
                   className="btn"
                   type="button"
-                  onClick={() =>
-                    setShowInterview(
-                      true
-                    )
+                  onClick={
+                    openInterviewScheduler
                   }
+                  disabled={savingInterview}
                 >
                   <CalendarDays
                     size={16}
                   />
 
-                  Schedule interview
+                  {selectedApplication
+                    .interview?.date
+                    ? "Reschedule interview"
+                    : "Schedule interview"}
                 </button>
 
               </div>
@@ -2269,6 +2399,33 @@ export default function Recruiter() {
                           "Not specified"}
                       </strong>
                     </div>
+                  </div>
+
+                  <div className="scheduled-interview-actions">
+                    <button
+                      className="outline"
+                      type="button"
+                      onClick={
+                        openInterviewScheduler
+                      }
+                      disabled={savingInterview}
+                    >
+                      <CalendarDays
+                        size={15}
+                      />
+                      Reschedule
+                    </button>
+
+                    <button
+                      className="danger-button"
+                      type="button"
+                      onClick={
+                        cancelInterview
+                      }
+                      disabled={savingInterview}
+                    >
+                      Cancel interview
+                    </button>
                   </div>
 
                 </div>
@@ -2409,16 +2566,18 @@ export default function Recruiter() {
       {/* ================================================= */}
 
       {showInterview &&
-        selectedApplication && (
+        selectedApplication &&
+        createPortal(
           <div
-            className="recruiter-modal-overlay"
+            className="recruiter-modal-overlay interview-scheduler-overlay"
             onClick={() =>
+              !savingInterview &&
               setShowInterview(false)
             }
           >
 
             <section
-              className="small-recruiter-modal"
+              className="small-recruiter-modal interview-scheduler-modal"
               onClick={(event) =>
                 event.stopPropagation()
               }
@@ -2542,23 +2701,44 @@ export default function Recruiter() {
                 />
               </div>
 
-              <button
-                className="btn full"
-                type="button"
-                onClick={
-                  scheduleInterview
-                }
-              >
-                <CalendarDays
-                  size={17}
-                />
+              <div className="interview-scheduler-footer">
+                <button
+                  className="outline"
+                  type="button"
+                  onClick={() =>
+                    !savingInterview &&
+                    setShowInterview(false)
+                  }
+                  disabled={savingInterview}
+                >
+                  Cancel
+                </button>
 
-                Schedule interview
-              </button>
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={
+                    scheduleInterview
+                  }
+                  disabled={savingInterview}
+                >
+                  <CalendarDays
+                    size={17}
+                  />
+
+                  {savingInterview
+                    ? "Saving..."
+                    : selectedApplication
+                        .interview?.date
+                    ? "Save new time"
+                    : "Schedule interview"}
+                </button>
+              </div>
 
             </section>
 
-          </div>
+          </div>,
+          document.body
         )}
 
       {/* ================================================= */}
