@@ -839,9 +839,9 @@
 }
 
 .scheduled-interview {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-  flex-wrap: wrap;
   margin-top: 15px;
 }
 
@@ -1507,11 +1507,6 @@
   min-height: 42px;
 }
 
-.scheduled-interview {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
 
 .scheduled-interview-actions {
   grid-column: 1 / -1;
@@ -1528,8 +1523,40 @@
   gap: 7px;
 }
 
+/* Real-world cancel interview action */
 .scheduled-interview-actions .danger-button {
-  border: 1px solid #f1caca;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease,
+              color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.scheduled-interview-actions .danger-button:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, .10);
+}
+
+.scheduled-interview-actions .danger-button:active {
+  transform: translateY(1px);
+}
+
+.scheduled-interview-actions .danger-button:focus-visible {
+  outline: 3px solid rgba(220, 38, 38, .14);
+  outline-offset: 2px;
 }
 
 @keyframes interviewModalIn {
@@ -1568,7 +1595,7 @@
     width: 100%;
   }
 
-  .scheduled-interview {
+ .scheduled-interview {
     grid-template-columns: 1fr !important;
   }
 
@@ -1580,69 +1607,4 @@
   .scheduled-interview-actions button {
     width: 100%;
   }
-}
-
-.interview-actions .danger,
-button.danger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 42px;
-  padding: 0 16px;
-  border: 1px solid #fecaca;
-  border-radius: 10px;
-  background: #fff;
-  color: #dc2626;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease,
-              color 0.18s ease, box-shadow 0.18s ease,
-              transform 0.18s ease;
-}
-
-.interview-actions .danger:hover,
-button.danger:hover {
-  background: #fef2f2;
-  border-color: #fca5a5;
-  color: #b91c1c;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.10);
-}
-
-.interview-actions .danger:active,
-button.danger:active {
-  transform: translateY(1px);
-}
-.interview-actions .danger,
-button.danger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 42px;
-  padding: 0 16px;
-  border: 1px solid #fecaca;
-  border-radius: 10px;
-  background: #fff;
-  color: #dc2626;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease,
-              color 0.18s ease, box-shadow 0.18s ease,
-              transform 0.18s ease;
-}
-
-.interview-actions .danger:hover,
-button.danger:hover {
-  background: #fef2f2;
-  border-color: #fca5a5;
-  color: #b91c1c;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.10);
-}
-
-.interview-actions .danger:active,
-button.danger:active {
-  transform: translateY(1px);
 }
