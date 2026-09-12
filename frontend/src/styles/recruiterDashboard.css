@@ -1581,3 +1581,50 @@
     width: 100%;
   }
 }
+
+.interview-actions .danger,
+button.danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  min-height: 42px;
+  padding: 0 16px;
+
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+
+  background: #fff;
+  color: #dc2626;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.interview-actions .danger:hover,
+button.danger:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.10);
+}
+
+.interview-actions .danger:active,
+button.danger:active {
+  transform: translateY(1px);
+}
+
+.interview-actions .danger:focus-visible,
+button.danger:focus-visible {
+  outline: 3px solid rgba(220, 38, 38, 0.14);
+  outline-offset: 2px;
+}
