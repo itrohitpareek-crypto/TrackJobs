@@ -17,9 +17,16 @@ import {
   X,
 } from "lucide-react";
 
-import { useAuth } from "../context/AuthContext";
+import {
+  useAuth,
+} from "../context/AuthContext";
+
 import api from "../services/api";
 
+
+// =====================================================
+// GOOGLE ICON
+// =====================================================
 
 function GoogleIcon() {
   return (
@@ -52,80 +59,70 @@ function GoogleIcon() {
 }
 
 
+// =====================================================
+// AUTH COMPONENT
+// =====================================================
+
 export default function Auth({
   mode,
 }) {
-
   const {
     login,
     register,
     user,
   } = useAuth();
 
-
   const navigate =
     useNavigate();
-
 
   const isLogin =
     mode === "login";
 
 
-  const [
-    role,
-    setRole,
-  ] = useState("candidate");
+  // ===================================================
+  // MAIN FORM
+  // ===================================================
 
+  const [role, setRole] =
+    useState("candidate");
 
-  const [
-    form,
-    setForm,
-  ] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
-
+  const [form, setForm] =
+    useState({
+      name: "",
+      email: "",
+      password: "",
+    });
 
   const [
     showPassword,
     setShowPassword,
   ] = useState(false);
 
+  const [err, setErr] =
+    useState("");
 
-  const [
-    err,
-    setErr,
-  ] = useState("");
-
-
-  const [
-    loading,
-    setLoading,
-  ] = useState(false);
+  const [loading, setLoading] =
+    useState(false);
 
 
-  /* =======================================================
-     FORGOT PASSWORD
-  ======================================================= */
+  // ===================================================
+  // FORGOT PASSWORD
+  // ===================================================
 
   const [
     showForgot,
     setShowForgot,
   ] = useState(false);
 
-
   const [
     forgotEmail,
     setForgotEmail,
   ] = useState("");
 
-
   const [
     forgotSent,
     setForgotSent,
   ] = useState(false);
-
 
   const [
     forgotLoading,
@@ -133,163 +130,153 @@ export default function Auth({
   ] = useState(false);
 
 
-  /* =======================================================
-     GOOGLE ERROR
-  ======================================================= */
+  // ===================================================
+  // GOOGLE ERROR
+  // ===================================================
 
   useEffect(() => {
-
     const googleError =
       localStorage.getItem(
         "jt_google_error"
       );
 
-
     if (googleError) {
-
-      setErr(
-        googleError
-      );
-
+      setErr(googleError);
 
       localStorage.removeItem(
         "jt_google_error"
       );
     }
-
   }, []);
 
 
-  /* =======================================================
-     AUTO REDIRECT
-  ======================================================= */
+  // ===================================================
+  // REDIRECT WHEN USER EXISTS
+  // ===================================================
 
   useEffect(() => {
-
-    if (!user) return;
-
+    if (!user) {
+      return;
+    }
 
     if (
       user.role === "admin"
     ) {
-
-      navigate(
-        "/admin",
-        {
-          replace: true,
-        }
-      );
-
+      navigate("/admin", {
+        replace: true,
+      });
     } else if (
       user.role === "recruiter"
     ) {
-
-      navigate(
-        "/recruiter",
-        {
-          replace: true,
-        }
-      );
-
+      navigate("/recruiter", {
+        replace: true,
+      });
     } else {
-
-      navigate(
-        "/jobs",
-        {
-          replace: true,
-        }
-      );
+      navigate("/jobs", {
+        replace: true,
+      });
     }
-
   }, [
     user,
     navigate,
   ]);
 
 
-  /* =======================================================
-     FORGOT PASSWORD
-  ======================================================= */
+  // ===================================================
+  // OPEN FORGOT PASSWORD
+  // ===================================================
 
-  const openForgot =
-    () => {
+  const openForgot = () => {
+    setForgotEmail(
+      form.email || ""
+    );
 
-      setForgotEmail(
-        form.email || ""
+    setForgotSent(false);
+
+    setShowForgot(true);
+  };
+
+
+  // ===================================================
+  // CLOSE FORGOT PASSWORD
+  // ===================================================
+
+  const closeForgot = () => {
+    setShowForgot(false);
+
+    setForgotSent(false);
+
+    setForgotLoading(false);
+  };
+
+
+  // ===================================================
+  // SEND PASSWORD RESET EMAIL
+  // ===================================================
+
+  const submitForgot = async (
+    e
+  ) => {
+    e.preventDefault();
+
+    setErr("");
+
+    const email =
+      forgotEmail
+        .trim()
+        .toLowerCase();
+
+    if (!email) {
+      setErr(
+        "Please enter your email address."
       );
 
-      setForgotSent(false);
+      return;
+    }
 
-      setShowForgot(true);
-    };
+    setForgotLoading(true);
 
+    try {
+      await api.post(
+        "/auth/forgot-password",
+        {
+          email,
+        }
+      );
 
-  const closeForgot =
-    () => {
+      setForgotSent(true);
+    } catch (error) {
+      console.error(
+        "Forgot password error:",
+        error
+      );
 
-      setShowForgot(false);
-
-      setForgotSent(false);
-
-      setForgotLoading(false);
-    };
-
-
-  const submitForgot =
-    async (e) => {
-
-      e.preventDefault();
-
-      setForgotLoading(true);
-
-
-      try {
-
-        await api.post(
-          "/auth/forgot-password",
-          {
-            email:
-              forgotEmail.trim(),
-          }
-        );
-
-
-        setForgotSent(
-          true
-        );
-
-      } catch (error) {
-
-        setErr(
+      setErr(
+        error.response?.data
+          ?.message ||
           "Unable to send reset link. Please try again."
-        );
-
-      } finally {
-
-        setForgotLoading(
-          false
-        );
-      }
-    };
+      );
+    } finally {
+      setForgotLoading(false);
+    }
+  };
 
 
-  /* =======================================================
-     GOOGLE
-  ======================================================= */
+  // ===================================================
+  // GOOGLE SIGN-IN
+  // ===================================================
 
   const handleGoogleClick =
     () => {
-
       const selectedRole =
         isLogin
           ? "candidate"
           : role;
 
-
       const apiBase =
-        import.meta.env.VITE_API_URL ||
+        import.meta.env
+          .VITE_API_URL ||
         "http://localhost:5000/api";
-
 
       window.location.href =
         `${apiBase}/auth/google?role=${encodeURIComponent(
@@ -298,148 +285,120 @@ export default function Auth({
     };
 
 
-  /* =======================================================
-     INPUT
-  ======================================================= */
+  // ===================================================
+  // INPUT CHANGE
+  // ===================================================
 
-  const handleChange =
-    (e) => {
+  const handleChange = (
+    e
+  ) => {
+    const {
+      name,
+      value,
+    } = e.target;
 
-      const {
-        name,
-        value,
-      } = e.target;
+    setForm(
+      (previous) => ({
+        ...previous,
+        [name]: value,
+      })
+    );
 
-
-      setForm(
-        (prev) => ({
-          ...prev,
-          [name]: value,
-        })
-      );
-
-
-      if (err) {
-        setErr("");
-      }
-    };
-
-
-  /* =======================================================
-     LOGIN / REGISTER
-  ======================================================= */
-
-  const submit =
-    async (e) => {
-
-      e.preventDefault();
-
+    if (err) {
       setErr("");
-
-      setLoading(true);
-
-
-      try {
-
-        /* ---------------------------------------------------
-           LOGIN
-        --------------------------------------------------- */
-
-        if (isLogin) {
-
-          const loggedInUser =
-            await login({
-              email:
-                form.email,
-
-              password:
-                form.password,
-            });
+    }
+  };
 
 
-          if (
-            loggedInUser?.role ===
-            "admin"
-          ) {
+  // ===================================================
+  // LOGIN / REGISTER
+  // ===================================================
 
-            navigate(
-              "/admin"
-            );
+  const submit = async (
+    e
+  ) => {
+    e.preventDefault();
 
-            return;
-          }
+    setErr("");
 
+    setLoading(true);
 
-          if (
-            loggedInUser?.role ===
-            "recruiter"
-          ) {
+    try {
+      // ===============================================
+      // LOGIN
+      // ===============================================
 
-            navigate(
-              "/recruiter"
-            );
-
-            return;
-          }
-
-
-          navigate(
-            "/jobs"
-          );
-
-          return;
-        }
-
-
-        /* ---------------------------------------------------
-           REGISTER
-        --------------------------------------------------- */
-
-        const registeredUser =
-          await register({
-            ...form,
-            role,
+      if (isLogin) {
+        const loggedInUser =
+          await login({
+            email:
+              form.email,
+            password:
+              form.password,
           });
 
-
         if (
-          registeredUser?.role ===
-          "recruiter"
+          loggedInUser?.role ===
+          "admin"
         ) {
-
-          navigate(
-            "/recruiter"
-          );
-
+          navigate("/admin");
           return;
         }
 
+        if (
+          loggedInUser?.role ===
+          "recruiter"
+        ) {
+          navigate("/recruiter");
+          return;
+        }
 
-        navigate(
-          "/jobs"
-        );
+        navigate("/jobs");
 
-      } catch (error) {
-
-        console.error(
-          "AUTH ERROR:",
-          error
-        );
+        return;
+      }
 
 
-        setErr(
-          error.response?.data
-            ?.message ||
+      // ===============================================
+      // REGISTER
+      // ===============================================
+
+      const registeredUser =
+        await register({
+          ...form,
+          role,
+        });
+
+      if (
+        registeredUser?.role ===
+        "recruiter"
+      ) {
+        navigate("/recruiter");
+        return;
+      }
+
+      navigate("/jobs");
+    } catch (error) {
+      console.error(
+        "AUTH ERROR:",
+        error
+      );
+
+      setErr(
+        error.response?.data
+          ?.message ||
           error.message ||
           "Something went wrong. Please try again."
-        );
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      } finally {
 
-        setLoading(false);
-      }
-    };
-
+  // ===================================================
+  // UI
+  // ===================================================
 
   return (
     <main className="simple-auth-page">
@@ -447,19 +406,15 @@ export default function Auth({
       <div className="simple-auth-card">
 
         {/* LOGO */}
-
         <Link
           to="/"
           className="simple-auth-logo"
         >
-
           <span className="simple-auth-logo-icon">
-
             <BriefcaseBusiness
               size={17}
               strokeWidth={2.2}
             />
-
           </span>
 
           <span>
@@ -468,12 +423,10 @@ export default function Auth({
               Jobs
             </strong>
           </span>
-
         </Link>
 
 
         {/* HEADING */}
-
         <div className="simple-auth-heading">
 
           <h1>
@@ -481,7 +434,6 @@ export default function Auth({
               ? "Welcome back"
               : "Create your account"}
           </h1>
-
 
           <p>
             {isLogin
@@ -493,7 +445,6 @@ export default function Auth({
 
 
         {/* GOOGLE */}
-
         <button
           type="button"
           className="simple-google-btn"
@@ -501,11 +452,9 @@ export default function Auth({
             handleGoogleClick
           }
         >
-
           <GoogleIcon />
 
           Continue with Google
-
         </button>
 
 
@@ -517,14 +466,12 @@ export default function Auth({
 
 
         {/* FORM */}
-
         <form
           className="simple-auth-form"
           onSubmit={submit}
         >
 
           {/* NAME */}
-
           {!isLogin && (
             <div className="simple-auth-field">
 
@@ -537,7 +484,9 @@ export default function Auth({
                 name="name"
                 type="text"
                 placeholder="Enter your full name"
-                value={form.name}
+                value={
+                  form.name
+                }
                 onChange={
                   handleChange
                 }
@@ -550,7 +499,6 @@ export default function Auth({
 
 
           {/* ROLE */}
-
           {!isLogin && (
             <div className="simple-auth-field">
 
@@ -558,9 +506,9 @@ export default function Auth({
                 Account type
               </label>
 
-
               <div className="simple-role-options">
 
+                {/* CANDIDATE */}
                 <button
                   type="button"
                   className={
@@ -575,13 +523,11 @@ export default function Auth({
                     )
                   }
                 >
-
                   <span>
                     👤
                   </span>
 
                   <div>
-
                     <strong>
                       Candidate
                     </strong>
@@ -589,12 +535,11 @@ export default function Auth({
                     <small>
                       Find jobs
                     </small>
-
                   </div>
-
                 </button>
 
 
+                {/* RECRUITER */}
                 <button
                   type="button"
                   className={
@@ -609,13 +554,11 @@ export default function Auth({
                     )
                   }
                 >
-
                   <span>
                     💼
                   </span>
 
                   <div>
-
                     <strong>
                       Recruiter
                     </strong>
@@ -623,9 +566,7 @@ export default function Auth({
                     <small>
                       Hire talent
                     </small>
-
                   </div>
-
                 </button>
 
               </div>
@@ -635,13 +576,11 @@ export default function Auth({
 
 
           {/* EMAIL */}
-
           <div className="simple-auth-field">
 
             <label htmlFor="email">
               Email address
             </label>
-
 
             <div className="simple-input-icon-box">
 
@@ -652,7 +591,9 @@ export default function Auth({
                 name="email"
                 type="email"
                 placeholder="you@example.com"
-                value={form.email}
+                value={
+                  form.email
+                }
                 onChange={
                   handleChange
                 }
@@ -666,7 +607,6 @@ export default function Auth({
 
 
           {/* PASSWORD */}
-
           <div className="simple-auth-field">
 
             <div className="simple-password-label-row">
@@ -674,7 +614,6 @@ export default function Auth({
               <label htmlFor="password">
                 Password
               </label>
-
 
               {isLogin && (
                 <button
@@ -717,14 +656,13 @@ export default function Auth({
                 required
               />
 
-
               <button
                 type="button"
                 className="simple-password-toggle"
                 onClick={() =>
                   setShowPassword(
-                    (prev) =>
-                      !prev
+                    (previous) =>
+                      !previous
                   )
                 }
                 aria-label={
@@ -733,7 +671,6 @@ export default function Auth({
                     : "Show password"
                 }
               >
-
                 {showPassword ? (
                   <EyeOff
                     size={17}
@@ -743,7 +680,6 @@ export default function Auth({
                     size={17}
                   />
                 )}
-
               </button>
 
             </div>
@@ -752,7 +688,6 @@ export default function Auth({
 
 
           {/* ERROR */}
-
           {err && (
             <div className="simple-auth-error">
               {err}
@@ -761,35 +696,32 @@ export default function Auth({
 
 
           {/* SUBMIT */}
-
           <button
             type="submit"
             className="simple-auth-submit"
-            disabled={loading}
+            disabled={
+              loading
+            }
           >
-
             {loading
               ? isLogin
                 ? "Signing in..."
                 : "Creating account..."
               : isLogin
-                ? "Sign in"
-                : "Create account"}
-
+              ? "Sign in"
+              : "Create account"}
 
             {!loading && (
               <span>
                 →
               </span>
             )}
-
           </button>
 
         </form>
 
 
         {/* SWITCH */}
-
         <div className="simple-auth-switch">
 
           <span>
@@ -797,7 +729,6 @@ export default function Auth({
               ? "Don't have an account?"
               : "Already have an account?"}
           </span>
-
 
           <Link
             to={
@@ -815,7 +746,6 @@ export default function Auth({
 
 
         {/* SECURITY */}
-
         <div className="simple-auth-security">
 
           <ShieldCheck
@@ -829,15 +759,16 @@ export default function Auth({
       </div>
 
 
-      {/* =====================================================
+      {/* =================================================
           FORGOT PASSWORD MODAL
-      ===================================================== */}
+      ================================================= */}
 
       {showForgot && (
-
         <div
           className="modal-bg"
-          onClick={closeForgot}
+          onClick={
+            closeForgot
+          }
         >
 
           <div
@@ -850,27 +781,25 @@ export default function Auth({
             <button
               type="button"
               className="close"
-              onClick={closeForgot}
+              onClick={
+                closeForgot
+              }
               aria-label="Close"
             >
-
               <X size={16} />
-
             </button>
 
 
             {!forgotSent ? (
-
               <>
-
                 <h2>
                   Reset your password
                 </h2>
 
-
                 <p className="modal-subtitle">
-                  Enter the email linked to your account
-                  and we'll send you a reset link.
+                  Enter the email linked
+                  to your account and
+                  we'll send you a reset link.
                 </p>
 
 
@@ -887,10 +816,11 @@ export default function Auth({
                       Email address
                     </label>
 
-
                     <div className="simple-input-icon-box">
 
-                      <Mail size={16} />
+                      <Mail
+                        size={16}
+                      />
 
                       <input
                         id="forgot-email"
@@ -899,13 +829,13 @@ export default function Auth({
                         value={
                           forgotEmail
                         }
-                        onChange={(
-                          e
-                        ) =>
+                        onChange={(e) =>
                           setForgotEmail(
-                            e.target.value
+                            e.target
+                              .value
                           )
                         }
+                        autoComplete="email"
                         required
                       />
 
@@ -921,46 +851,32 @@ export default function Auth({
                       forgotLoading
                     }
                   >
-
                     {forgotLoading
                       ? "Sending link..."
                       : "Send reset link"}
-
                   </button>
 
                 </form>
-
               </>
-
             ) : (
-
               <div className="forgot-success">
 
                 <span className="forgot-success-icon">
-
                   <Mail size={22} />
-
                 </span>
-
 
                 <h2>
                   Check your inbox
                 </h2>
 
-
                 <p className="modal-subtitle">
-
                   If an account exists for{" "}
-
                   <strong>
                     {forgotEmail}
                   </strong>
-
-                  , a password reset link
-                  is on its way.
-
+                  , a password reset
+                  link is on its way.
                 </p>
-
 
                 <button
                   type="button"
@@ -973,13 +889,11 @@ export default function Auth({
                 </button>
 
               </div>
-
             )}
 
           </div>
 
         </div>
-
       )}
 
     </main>

@@ -3,10 +3,9 @@ import path from "path";
 import Application from "../models/Application.js";
 import Job from "../models/Job.js";
 import User from "../models/User.js";
-
-// ==========================================
-// ALLOWED APPLICATION STATUSES
-// ==========================================
+import {
+  createNotificationWithEmail,
+} from "../utils/notificationService.js";
 
 const allowedStatuses = [
   "Applied",
@@ -18,10 +17,6 @@ const allowedStatuses = [
   "Rejected",
   "Withdrawn",
 ];
-
-// ==========================================
-// MATCH SCORE
-// ==========================================
 
 const calculateMatchScore = (
   candidateSkills = [],
@@ -38,20 +33,15 @@ const calculateMatchScore = (
     new Set(
       candidateSkills.map(
         (skill) =>
-          skill
-            .toLowerCase()
-            .trim()
+          skill.toLowerCase().trim()
       )
     );
 
   const matched =
-    jobSkills.filter(
-      (skill) =>
-        candidateSet.has(
-          skill
-            .toLowerCase()
-            .trim()
-        )
+    jobSkills.filter((skill) =>
+      candidateSet.has(
+        skill.toLowerCase().trim()
+      )
     );
 
   return Math.round(
@@ -60,6 +50,7 @@ const calculateMatchScore = (
       100
   );
 };
+
 
 // ==========================================
 // APPLY TO JOB
@@ -137,10 +128,6 @@ export const apply = async (
       });
     }
 
-    // ======================================
-    // DUPLICATE APPLICATION
-    // ======================================
-
     const existing =
       await Application.findOne({
         job: jobId,
@@ -185,10 +172,6 @@ export const apply = async (
       });
     }
 
-    // ======================================
-    // GET CANDIDATE SKILLS
-    // ======================================
-
     const candidate =
       await User.findById(
         req.user._id
@@ -200,31 +183,18 @@ export const apply = async (
         job.skills || []
       );
 
-    // ======================================
-    // CREATE APPLICATION
-    // ======================================
-
     const application =
       await Application.create({
         job: jobId,
-
         candidate:
           req.user._id,
-
         coverLetter:
           String(
             coverLetter
           ).trim(),
-
         matchScore,
-
-        status:
-          "Applied",
+        status: "Applied",
       });
-
-    // ======================================
-    // INCREMENT APPLICATION COUNT
-    // ======================================
 
     await Job.findByIdAndUpdate(
       jobId,
@@ -235,9 +205,41 @@ export const apply = async (
       }
     );
 
-    // ======================================
-    // RETURN POPULATED APPLICATION
-    // ======================================
+    // Recruiter gets:
+    // 1. In-app notification
+    // 2. Email notification
+    //
+    // Message/chat emails are NOT used here.
+
+    await createNotificationWithEmail({
+      recipient:
+        job.recruiter,
+
+      type: "application",
+
+      title:
+        "New job application",
+
+      message: `${
+        candidate?.name ||
+        "A candidate"
+      } applied for ${
+        job.title ||
+        "your job"
+      }.`,
+
+      link:
+        "/recruiter",
+
+      relatedId:
+        application._id,
+
+      eventKey:
+        `application:${application._id}:created`,
+
+      preference:
+        "applicationUpdates",
+    });
 
     const populated =
       await Application.findById(
@@ -266,8 +268,7 @@ export const apply = async (
     );
 
     if (
-      error.code ===
-      11000
+      error.code === 11000
     ) {
       return res.status(409).json({
         success: false,
@@ -284,15 +285,13 @@ export const apply = async (
   }
 };
 
+
 // ==========================================
 // CANDIDATE APPLICATIONS
 // ==========================================
 
 export const myApplications =
-  async (
-    req,
-    res
-  ) => {
+  async (req, res) => {
     try {
       const applications =
         await Application.find({
@@ -325,15 +324,13 @@ export const myApplications =
     }
   };
 
+
 // ==========================================
-// SINGLE CANDIDATE APPLICATION
+// SINGLE APPLICATION
 // ==========================================
 
 export const getMyApplication =
-  async (
-    req,
-    res
-  ) => {
+  async (req, res) => {
     try {
       const application =
         await Application.findOne({
@@ -376,15 +373,13 @@ export const getMyApplication =
     }
   };
 
+
 // ==========================================
 // WITHDRAW APPLICATION
 // ==========================================
 
 export const withdrawApplication =
-  async (
-    req,
-    res
-  ) => {
+  async (req, res) => {
     try {
       const application =
         await Application.findOne({
@@ -460,15 +455,13 @@ export const withdrawApplication =
     }
   };
 
+
 // ==========================================
 // RECRUITER APPLICANTS
 // ==========================================
 
 export const applicants =
-  async (
-    req,
-    res
-  ) => {
+  async (req, res) => {
     try {
       const job =
         await Job.findOne({
@@ -492,7 +485,7 @@ export const applicants =
         })
           .populate(
             "candidate",
-            "name email phone location bio headline skills education experience resumeUrl avatar linkedinUrl githubUrl portfolioUrl preferredRole preferredLocation workModePreference expectedSalaryMin expectedSalaryMax noticePeriod profileVisibility"
+            "name email phone location bio headline skills education experience resumeUrl avatar linkedinUrl githubUrl portfolioUrl"
           )
           .populate(
             "job",
@@ -520,15 +513,13 @@ export const applicants =
     }
   };
 
+
 // ==========================================
-// RECRUITER - FRESH APPLICATION
+// RECRUITER APPLICATION
 // ==========================================
 
 export const getRecruiterApplication =
-  async (
-    req,
-    res
-  ) => {
+  async (req, res) => {
     try {
       const application =
         await Application.findById(
@@ -551,19 +542,12 @@ export const getRecruiterApplication =
         });
       }
 
-      // ====================================
-      // AUTHORIZATION
-      // ====================================
-
       if (
         !application.job ||
         String(
-          application.job
-            .recruiter
+          application.job.recruiter
         ) !==
-          String(
-            req.user._id
-          )
+          String(req.user._id)
       ) {
         return res.status(403).json({
           success: false,
@@ -590,15 +574,13 @@ export const getRecruiterApplication =
     }
   };
 
+
 // ==========================================
 // UPDATE APPLICATION STATUS
 // ==========================================
 
 export const updateStatus =
-  async (
-    req,
-    res
-  ) => {
+  async (req, res) => {
     try {
       const {
         status,
@@ -617,8 +599,7 @@ export const updateStatus =
       }
 
       if (
-        status ===
-        "Withdrawn"
+        status === "Withdrawn"
       ) {
         return res.status(400).json({
           success: false,
@@ -630,10 +611,15 @@ export const updateStatus =
       const application =
         await Application.findById(
           req.params.id
-        ).populate(
-          "job",
-          "recruiter"
-        );
+        )
+          .populate(
+            "job",
+            "recruiter title company"
+          )
+          .populate(
+            "candidate",
+            "name email notificationPreferences"
+          );
 
       if (!application) {
         return res.status(404).json({
@@ -645,12 +631,9 @@ export const updateStatus =
 
       if (
         String(
-          application.job
-            .recruiter
+          application.job.recruiter
         ) !==
-        String(
-          req.user._id
-        )
+        String(req.user._id)
       ) {
         return res.status(403).json({
           success: false,
@@ -658,6 +641,22 @@ export const updateStatus =
             "You are not authorized to update this application",
         });
       }
+
+      const previousStatus =
+        application.status;
+
+      const previousInterviewDate =
+        application.interview?.date
+          ? new Date(
+              application.interview.date
+            ).getTime()
+          : null;
+
+      const previousInterviewMode =
+        String(
+          application.interview
+            ?.mode || ""
+        );
 
       application.status =
         status;
@@ -669,22 +668,153 @@ export const updateStatus =
           {
             date:
               req.body.interview
-                .date ||
-              null,
+                .date || null,
 
-            mode: String(
-              req.body.interview
-                .mode || ""
-            ),
+            mode:
+              String(
+                req.body.interview
+                  .mode || ""
+              ),
 
-            notes: String(
-              req.body.interview
-                .notes || ""
-            ),
+            notes:
+              String(
+                req.body.interview
+                  .notes || ""
+              ),
           };
       }
 
+      const nextInterviewDate =
+        application.interview?.date
+          ? new Date(
+              application.interview.date
+            ).getTime()
+          : null;
+
+      const nextInterviewMode =
+        String(
+          application.interview
+            ?.mode || ""
+        );
+
+      const statusChanged =
+        previousStatus !==
+        status;
+
+      const interviewChanged =
+        previousInterviewDate !==
+          nextInterviewDate ||
+        previousInterviewMode !==
+          nextInterviewMode;
+
       await application.save();
+
+      // =================================================
+      // EMAIL + NOTIFICATION
+      // =================================================
+
+      if (
+        statusChanged ||
+        interviewChanged
+      ) {
+        let title =
+          `Application status updated: ${status}`;
+
+        let message =
+          `Your application for ${
+            application.job?.title ||
+            "the job"
+          } is now ${status}.`;
+
+        // Interview scheduled/rescheduled
+        if (
+          status ===
+            "Interview Scheduled" &&
+          nextInterviewDate
+        ) {
+          const when =
+            new Date(
+              nextInterviewDate
+            ).toLocaleString(
+              "en-IN",
+              {
+                dateStyle:
+                  "medium",
+                timeStyle:
+                  "short",
+              }
+            );
+
+          title =
+            previousInterviewDate
+              ? "Interview rescheduled"
+              : "Interview scheduled";
+
+          message =
+            `Your interview for ${
+              application.job?.title ||
+              "the job"
+            } is ${
+              previousInterviewDate
+                ? "rescheduled"
+                : "scheduled"
+            } for ${when}${
+              nextInterviewMode
+                ? ` (${nextInterviewMode})`
+                : ""
+            }.`;
+        }
+
+        // Interview cancelled
+        else if (
+          previousInterviewDate &&
+          !nextInterviewDate
+        ) {
+          title =
+            "Interview cancelled";
+
+          message =
+            `The interview for ${
+              application.job?.title ||
+              "the job"
+            } has been cancelled by the recruiter. Your application remains ${status}.`;
+        }
+
+        await createNotificationWithEmail(
+          {
+            recipient:
+              application
+                .candidate
+                ?._id,
+
+            type:
+              status ===
+              "Interview Scheduled"
+                ? "interview"
+                : "application",
+
+            title,
+
+            message,
+
+            link:
+              "/applications",
+
+            relatedId:
+              application._id,
+
+            eventKey:
+              status ===
+                "Interview Scheduled" &&
+              nextInterviewDate
+                ? `application:${application._id}:interview:${nextInterviewDate}`
+                : `application:${application._id}:status:${status}:${Date.now()}`,
+
+            preference:
+              "applicationUpdates",
+          }
+        );
+      }
 
       const updated =
         await Application.findById(
@@ -692,7 +822,7 @@ export const updateStatus =
         )
           .populate(
             "candidate",
-            "name email phone location bio headline skills education experience resumeUrl avatar linkedinUrl githubUrl portfolioUrl preferredRole preferredLocation workModePreference expectedSalaryMin expectedSalaryMax noticePeriod profileVisibility"
+            "name email phone location skills education experience resumeUrl avatar linkedinUrl githubUrl portfolioUrl"
           )
           .populate(
             "job",
@@ -720,15 +850,13 @@ export const updateStatus =
     }
   };
 
+
 // ==========================================
 // RECRUITER DASHBOARD
 // ==========================================
 
 export const dashboard =
-  async (
-    req,
-    res
-  ) => {
+  async (req, res) => {
     try {
       const jobs =
         await Job.countDocuments({
@@ -763,8 +891,7 @@ export const dashboard =
             job: {
               $in: jobIds,
             },
-            status:
-              "Selected",
+            status: "Selected",
           }
         );
 
@@ -799,22 +926,18 @@ export const dashboard =
     }
   };
 
+
 // ==========================================
 // DOWNLOAD CANDIDATE RESUME
 // ==========================================
 
 export const downloadCandidateResume =
-  async (
-    req,
-    res
-  ) => {
+  async (req, res) => {
     try {
       const application =
         await Application.findById(
           req.params.id
-        ).populate(
-          "job"
-        );
+        ).populate("job");
 
       if (!application) {
         return res.status(404).json({
@@ -826,12 +949,9 @@ export const downloadCandidateResume =
 
       if (
         String(
-          application.job
-            .recruiter
+          application.job.recruiter
         ) !==
-          String(
-            req.user._id
-          ) &&
+          String(req.user._id) &&
         req.user.role !==
           "admin"
       ) {
@@ -886,9 +1006,7 @@ export const downloadCandidateResume =
 
       return res.download(
         filePath,
-
         `${safeName}-Resume${extension}`,
-
         (error) => {
           if (error) {
             console.error(
